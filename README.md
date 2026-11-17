@@ -248,6 +248,14 @@ println("Length:", len(items));
 | `slice(seq, start, end?)` | `(str \| list, int, [int])` | Extracts a sub-sequence without mutating the original |
 | `split(str, sep?)` | `(str, [str])` | Splits a string into a list of substrings |
 | `join(list, sep)` | `(list, str)` | Concatenates list elements into a single string |
+| `abs(x)` | `(number)` | Returns the absolute value of x |
+| `sign(x)` | `(number)` | Returns -1 for negative numbers, 1 for positive, 0 for zero |
+| `min(...args)` | `(...number \| list)` | Returns the smallest value among arguments or inside a list |
+| `max(...args)` | `(...number \| list)` | Returns the largest value among arguments or inside a list |
+| `clamp(val, min_val, max_val)` | `(number, number, number)` | Restricts val to stay within [min_val, max_val] |
+| `rem(x, y)` | `(number, number)` | Remainder of floating-point or integer division (x % y) |
+| `gcd(a, b)` | `(int, int)` | Greatest common divisor of two integers |
+| `lcm(a, b)` | `(int, int)` | Least common multiple of two integers |
 
 ---
 

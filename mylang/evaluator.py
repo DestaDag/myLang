@@ -3,6 +3,7 @@ Evaluator (Tree-walk interpreter) for MyLang AST.
 Implements the ASTVisitor interface for clean separation of syntax and execution.
 """
 
+import math
 import sys
 import time
 from typing import Any, List, Optional, TextIO
@@ -272,6 +273,151 @@ class Evaluator(ASTVisitor):
                 )
             return sep.join(stringify(item) for item in target_list)
 
+        def b_abs(evaluator: "Evaluator", args: List[Any], loc: SourceLocation) -> Any:
+            val = args[0]
+            if not isinstance(val, (int, float)):
+                raise RuntimeError(
+                    f"abs() expects a number, got '{type(val).__name__}'",
+                    line=loc.line,
+                    column=loc.column,
+                    source=evaluator.source,
+                )
+            return abs(val)
+
+        def b_sign(evaluator: "Evaluator", args: List[Any], loc: SourceLocation) -> int:
+            val = args[0]
+            if not isinstance(val, (int, float)):
+                raise RuntimeError(
+                    f"sign() expects a number, got '{type(val).__name__}'",
+                    line=loc.line,
+                    column=loc.column,
+                    source=evaluator.source,
+                )
+            if val > 0:
+                return 1
+            elif val < 0:
+                return -1
+            return 0
+
+        def b_min(evaluator: "Evaluator", args: List[Any], loc: SourceLocation) -> Any:
+            if len(args) == 0:
+                raise RuntimeError(
+                    "min() expects at least 1 argument, got 0",
+                    line=loc.line,
+                    column=loc.column,
+                    source=evaluator.source,
+                )
+            if len(args) == 1 and isinstance(args[0], list):
+                items = args[0]
+                if len(items) == 0:
+                    raise RuntimeError(
+                        "min() on an empty list",
+                        line=loc.line,
+                        column=loc.column,
+                        source=evaluator.source,
+                    )
+            else:
+                items = args
+
+            try:
+                return min(items)
+            except TypeError as exc:
+                raise RuntimeError(
+                    f"min() comparison error: {exc}",
+                    line=loc.line,
+                    column=loc.column,
+                    source=evaluator.source,
+                ) from exc
+
+        def b_max(evaluator: "Evaluator", args: List[Any], loc: SourceLocation) -> Any:
+            if len(args) == 0:
+                raise RuntimeError(
+                    "max() expects at least 1 argument, got 0",
+                    line=loc.line,
+                    column=loc.column,
+                    source=evaluator.source,
+                )
+            if len(args) == 1 and isinstance(args[0], list):
+                items = args[0]
+                if len(items) == 0:
+                    raise RuntimeError(
+                        "max() on an empty list",
+                        line=loc.line,
+                        column=loc.column,
+                        source=evaluator.source,
+                    )
+            else:
+                items = args
+
+            try:
+                return max(items)
+            except TypeError as exc:
+                raise RuntimeError(
+                    f"max() comparison error: {exc}",
+                    line=loc.line,
+                    column=loc.column,
+                    source=evaluator.source,
+                ) from exc
+
+        def b_clamp(evaluator: "Evaluator", args: List[Any], loc: SourceLocation) -> Any:
+            val, min_val, max_val = args[0], args[1], args[2]
+            for name, v in [("val", val), ("min_val", min_val), ("max_val", max_val)]:
+                if not isinstance(v, (int, float)):
+                    raise RuntimeError(
+                        f"clamp() {name} must be a number, got '{type(v).__name__}'",
+                        line=loc.line,
+                        column=loc.column,
+                        source=evaluator.source,
+                    )
+            if min_val > max_val:
+                raise RuntimeError(
+                    f"clamp() min_val ({min_val}) cannot be greater than max_val ({max_val})",
+                    line=loc.line,
+                    column=loc.column,
+                    source=evaluator.source,
+                )
+            return min(max(val, min_val), max_val)
+
+        def b_rem(evaluator: "Evaluator", args: List[Any], loc: SourceLocation) -> Any:
+            x, y = args[0], args[1]
+            if not isinstance(x, (int, float)) or not isinstance(y, (int, float)):
+                raise RuntimeError(
+                    f"rem() arguments must be numbers, got '{type(x).__name__}' and '{type(y).__name__}'",
+                    line=loc.line,
+                    column=loc.column,
+                    source=evaluator.source,
+                )
+            if y == 0:
+                raise RuntimeError(
+                    "rem() division by zero",
+                    line=loc.line,
+                    column=loc.column,
+                    source=evaluator.source,
+                )
+            return x % y
+
+        def b_gcd(evaluator: "Evaluator", args: List[Any], loc: SourceLocation) -> int:
+            a, b = args[0], args[1]
+            if not isinstance(a, int) or not isinstance(b, int):
+                raise RuntimeError(
+                    f"gcd() arguments must be integers, got '{type(a).__name__}' and '{type(b).__name__}'",
+                    line=loc.line,
+                    column=loc.column,
+                    source=evaluator.source,
+                )
+            return math.gcd(a, b)
+
+        def b_lcm(evaluator: "Evaluator", args: List[Any], loc: SourceLocation) -> int:
+            a, b = args[0], args[1]
+            if not isinstance(a, int) or not isinstance(b, int):
+                raise RuntimeError(
+                    f"lcm() arguments must be integers, got '{type(a).__name__}' and '{type(b).__name__}'",
+                    line=loc.line,
+                    column=loc.column,
+                    source=evaluator.source,
+                )
+            return math.lcm(a, b)
+
         env.define("print", MyLangBuiltin("print", b_print, expected_arity=-1))
         env.define("println", MyLangBuiltin("println", b_print, expected_arity=-1))
         env.define("len", MyLangBuiltin("len", b_len, expected_arity=1))
@@ -287,6 +433,14 @@ class Evaluator(ASTVisitor):
         env.define("slice", MyLangBuiltin("slice", b_slice, expected_arity=-1))
         env.define("split", MyLangBuiltin("split", b_split, expected_arity=-1))
         env.define("join", MyLangBuiltin("join", b_join, expected_arity=-1))
+        env.define("abs", MyLangBuiltin("abs", b_abs, expected_arity=1))
+        env.define("sign", MyLangBuiltin("sign", b_sign, expected_arity=1))
+        env.define("min", MyLangBuiltin("min", b_min, expected_arity=-1))
+        env.define("max", MyLangBuiltin("max", b_max, expected_arity=-1))
+        env.define("clamp", MyLangBuiltin("clamp", b_clamp, expected_arity=3))
+        env.define("rem", MyLangBuiltin("rem", b_rem, expected_arity=2))
+        env.define("gcd", MyLangBuiltin("gcd", b_gcd, expected_arity=2))
+        env.define("lcm", MyLangBuiltin("lcm", b_lcm, expected_arity=2))
 
     # --- Top-Level Evaluation ---
 

@@ -251,6 +251,70 @@ class TestEvaluator(unittest.TestCase):
             "xyz",
         ])
 
+    def test_math_utilities(self):
+        code = """
+        var a1 = abs(-15);
+        var a2 = abs(42);
+        var a3 = abs(0);
+
+        var s1 = sign(-99);
+        var s2 = sign(55);
+        var s3 = sign(0);
+
+        var m1 = min(5, 2, 9, -3);
+        var m2 = min([10, 4, 25, 2]);
+
+        var mx1 = max(5, 2, 9, -3);
+        var mx2 = max([10, 4, 25, 2]);
+
+        var c1 = clamp(15, 0, 10);
+        var c2 = clamp(-5, 0, 10);
+        var c3 = clamp(7, 0, 10);
+
+        var r1 = rem(10, 3);
+        var r2 = rem(7.5, 2.5);
+
+        var g1 = gcd(48, 18);
+        var g2 = gcd(101, 10);
+
+        var l1 = lcm(12, 15);
+        var l2 = lcm(4, 6);
+
+        [a1, a2, a3, s1, s2, s3, m1, m2, mx1, mx2, c1, c2, c3, r1, r2, g1, g2, l1, l2];
+        """
+        res, _ = self.run_code(code)
+        self.assertEqual(res, [
+            15, 42, 0,
+            -1, 1, 0,
+            -3, 2,
+            9, 25,
+            10, 0, 7,
+            1, 0.0,
+            6, 1,
+            60, 12,
+        ])
+
+    def test_math_utilities_errors(self):
+        with self.assertRaises(RuntimeError) as ctx:
+            self.run_code("rem(10, 0);")
+        self.assertIn("division by zero", str(ctx.exception))
+
+        with self.assertRaises(RuntimeError) as ctx:
+            self.run_code("clamp(5, 10, 2);")
+        self.assertIn("cannot be greater than", str(ctx.exception))
+
+        with self.assertRaises(RuntimeError) as ctx:
+            self.run_code("gcd(1.5, 2);")
+        self.assertIn("must be integers", str(ctx.exception))
+
+        with self.assertRaises(RuntimeError) as ctx:
+            self.run_code("abs('hello');")
+        self.assertIn("expects a number", str(ctx.exception))
+
+        with self.assertRaises(RuntimeError) as ctx:
+            self.run_code("min([]);")
+        self.assertIn("empty list", str(ctx.exception))
+
 
 if __name__ == "__main__":
     unittest.main()
